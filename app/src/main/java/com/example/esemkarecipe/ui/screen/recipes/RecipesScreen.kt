@@ -42,6 +42,7 @@ fun RecipesScreen(
     state: RecipesState,
     categoryName: String,
     onBackClick: () -> Unit,
+    onRecipeClick: (Recipe) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -69,14 +70,14 @@ fun RecipesScreen(
                 state.isLoading -> LoadingView()
                 state.errorMessage != null -> ErrorView(state.errorMessage)
                 state.recipes.isEmpty() -> EmptyView()
-                else -> RecipesGrid(state.recipes)
+                else -> RecipesGrid(state.recipes, onRecipeClick)
             }
         }
     }
 }
 
 @Composable
-private fun RecipesGrid(recipes: List<Recipe>) {
+private fun RecipesGrid(recipes: List<Recipe>, onRecipeClick: (Recipe) -> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(16.dp),
@@ -84,15 +85,19 @@ private fun RecipesGrid(recipes: List<Recipe>) {
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(recipes) { recipe ->
-            RecipeItem(recipe)
+            RecipeItem(
+                recipe = recipe,
+                onClick = {onRecipeClick(recipe)}
+            )
         }
     }
 }
 
 @Composable
-private fun RecipeItem(recipe: Recipe) {
+private fun RecipeItem(recipe: Recipe, onClick: () -> Unit) {
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)

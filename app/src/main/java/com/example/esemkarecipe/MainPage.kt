@@ -17,10 +17,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.esemkarecipe.model.Category
+import com.example.esemkarecipe.model.Recipe
 import com.example.esemkarecipe.ui.screen.home.HomeScreen
 import com.example.esemkarecipe.ui.screen.home.HomeViewModel
 import com.example.esemkarecipe.ui.screen.login.LoginScreen
 import com.example.esemkarecipe.ui.screen.login.LoginViewModel
+import com.example.esemkarecipe.ui.screen.recipe.RecipeScreen
+import com.example.esemkarecipe.ui.screen.recipe.RecipeViewModel
 import com.example.esemkarecipe.ui.screen.recipes.RecipesScreen
 import com.example.esemkarecipe.ui.screen.recipes.RecipesViewModel
 
@@ -28,6 +31,7 @@ sealed class Page {
     object Login : Page()
     object Home : Page()
     data class Recipes(val category: Category) : Page()
+    data class Recipe(val recipe: com.example.esemkarecipe.model.Recipe) : Page()
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -87,6 +91,31 @@ fun MainPage() {
                         categoryName = page.category.name,
                         onBackClick = {
                             setCurrentPage(Page.Home)
+                        },
+                        onRecipeClick = { recipe ->
+                            setCurrentPage(Page.Recipe(recipe))
+                        }
+                    )
+                }
+            }
+
+            is Page.Recipe -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(horizontal = 16.dp)
+                ) {
+                    val recipeViewModel: RecipeViewModel = remember(page.recipe.id) {
+                        RecipeViewModel(
+                            recipeId = page.recipe.id,
+                        )
+                    }
+
+                    RecipeScreen(
+                        state = recipeViewModel.state,
+                        onBackClick = {
+                            setCurrentPage(Page.Recipes(page.recipe.category))
                         }
                     )
                 }

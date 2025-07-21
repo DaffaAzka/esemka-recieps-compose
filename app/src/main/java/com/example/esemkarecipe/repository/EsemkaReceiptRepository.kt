@@ -189,7 +189,44 @@ class EsemkaReceiptRepository {
             }
         }.start()
     }
+    fun getRecipe(recipeId: Int, callback: (Recipe?, String?) -> Unit) {
+        Thread {
+            try {
+                val url = URL("$BASE_URL/recipes/$recipeId")  // Fixed URL to use recipeId instead of undefined categoryId
+                val connection = url.openConnection() as HttpURLConnection
+                connection.apply {
+                    requestMethod = "GET"
+                    setRequestProperty("Accept", "application/json")
+                    connectTimeout = TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS.toLong()).toInt()
+                    readTimeout = TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS.toLong()).toInt()
+                }
 
+                val responseCode = connection.responseCode
+                val responseBody = if (responseCode == HttpURLConnection.HTTP_OK) {
+                    connection.inputStream.bufferedReader().use { it.readText() }
+                } else {
+                    connection.errorStream?.bufferedReader()?.use { it.readText() }
+                        ?: "Error: $responseCode"
+                }
+
+                val result = if (responseCode == HttpURLConnection.HTTP_OK) {
+                    parseRecipe(responseBody) to null
+                } else {
+                    null to "Failed to load recipe ($responseCode): $responseBody"
+                }
+
+                Handler(Looper.getMainLooper()).post {
+                    callback(result.first, result.second)
+                }
+
+                connection.disconnect()
+            } catch (e: Exception) {
+                Handler(Looper.getMainLooper()).post {
+                    callback(null, "Error: ${e.message}")
+                }
+            }
+        }.start()
+    }
     private fun parseCategories(json: String): List<Category> {
         val jsonArray = JSONArray(json)
         return List(jsonArray.length()) { i ->
@@ -236,4 +273,41 @@ class EsemkaReceiptRepository {
             )
         }
     }
+
+    private fun parseRecipe(json: String): Recipe {
+        val jsonArray = JSONArray(json)
+
+        val obj = jsonArray.getJSONObject(0)
+        val categoryObj = obj.getJSONObject("category")
+
+        val ingredientsArray = obj.getJSONArray("ingredients")
+        val ingredients = List(ingredientsArray.length()) { j ->
+            ingredientsArray.getString(j)
+        }
+
+        val stepsArray = obj.getJSONArray("steps")
+        val steps = List(stepsArray.length()) { j ->
+            stepsArray.getString(j)
+        }
+
+        val recipe = Recipe(
+            category = Category(
+                icon = categoryObj.getString("icon"),
+                id = categoryObj.getInt("id"),
+                name = categoryObj.getString("name")
+            ),
+            categoryId = obj.getInt("categoryId"),
+            cookingTimeEstimate = obj.getInt("cookingTimeEstimate"),
+            description = obj.getString("description"),
+            id = obj.getInt("id"),
+            image = obj.getString("image"),
+            ingredients = ingredients,
+            priceEstimate = obj.getInt("priceEstimate"),
+            steps = steps,
+            title = obj.getString("title")
+        )
+
+        return recipe
+    }
+
 }
