@@ -1,6 +1,7 @@
 package com.example.esemkarecipe
 
-import android.annotation.SuppressLint
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -12,9 +13,12 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.esemkarecipe.model.Category
 import com.example.esemkarecipe.model.Recipe
@@ -34,16 +38,48 @@ sealed class Page {
     data class Recipe(val recipe: com.example.esemkarecipe.model.Recipe) : Page()
 }
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MainPage() {
-    val (currentPage, setCurrentPage) = remember { mutableStateOf<Page>(Page.Login) }
+    var currentPage by remember { mutableStateOf<Page>(Page.Login) }
+    var navigationStack by remember { mutableStateOf<List<Page>>(emptyList()) }
+    val context = LocalContext.current
+
+
+    // Handle system back button
+    BackHandler(enabled = navigationStack.isNotEmpty()) {
+        if (navigationStack.isNotEmpty()) {
+            currentPage = navigationStack.last()
+            navigationStack = navigationStack.dropLast(1)
+        } else {
+            (context as? Activity)?.finish()
+        }
+    }
+
+    fun navigateTo(newPage: Page) {
+        if (currentPage != Page.Login) {
+            navigationStack = navigationStack + currentPage
+        }
+        currentPage = newPage
+    }
+
+    fun navigateBack() {
+        if (navigationStack.isNotEmpty()) {
+            currentPage = navigationStack.last()
+            navigationStack = navigationStack.dropLast(1)
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            if (currentPage !is Page.Login && currentPage !is Page.Recipes && currentPage !is Page.Recipe) {
-                BottomNavigationBar(currentPage = currentPage, onSelectedPage = setCurrentPage)
+            if (currentPage is Page.Home) {
+                BottomNavigationBar(
+                    currentPage = currentPage,
+                    onSelectedPage = { page ->
+                        navigationStack = emptyList()
+                        currentPage = page
+                    }
+                )
             }
         }
     ) { innerPadding ->
@@ -54,7 +90,8 @@ fun MainPage() {
                     state = loginViewModel.state,
                     onEvent = loginViewModel::onEvent,
                     onNavigate = {
-                        setCurrentPage(Page.Home)
+                        navigationStack = emptyList()
+                        currentPage = Page.Home
                     }
                 )
             }
@@ -70,7 +107,7 @@ fun MainPage() {
                     HomeScreen(
                         state = homeViewModel.state,
                         onCategoryClick = { category ->
-                            setCurrentPage(Page.Recipes(category))
+                            navigateTo(Page.Recipes(category))
                         }
                     )
                 }
@@ -90,10 +127,10 @@ fun MainPage() {
                         state = recipesViewModel.state,
                         categoryName = page.category.name,
                         onBackClick = {
-                            setCurrentPage(Page.Home)
+                            navigateBack()
                         },
                         onRecipeClick = { recipe ->
-                            setCurrentPage(Page.Recipe(recipe))
+                            navigateTo(Page.Recipe(recipe))
                         }
                     )
                 }
@@ -115,7 +152,7 @@ fun MainPage() {
                     RecipeScreen(
                         state = recipeViewModel.state,
                         onBackClick = {
-                            setCurrentPage(Page.Recipes(page.recipe.category))
+                            navigateBack()
                         }
                     )
                 }
@@ -125,13 +162,26 @@ fun MainPage() {
 }
 
 @Composable
-fun BottomNavigationBar(currentPage: Page, onSelectedPage: (Page) -> Unit) {
+fun BottomNavigationBar(
+    currentPage: Page,
+    onSelectedPage: (Page) -> Unit
+) {
     NavigationBar {
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Home,
+                    contentDescription = "Home"
+                )
+            },
             selected = currentPage is Page.Home,
-            onClick = { onSelectedPage(Page.Home) },
-            label = { Text("Home") },
+            onClick = {
+                if (currentPage !is Page.Home) {
+                    onSelectedPage(Page.Home)
+                }
+            },
+            label = { Text("Home") }
         )
+
     }
 }
