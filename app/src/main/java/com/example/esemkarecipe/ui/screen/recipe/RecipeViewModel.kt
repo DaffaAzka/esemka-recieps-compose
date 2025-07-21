@@ -15,7 +15,7 @@ class RecipeViewModel(
         private set
 
     init {
-
+        loadRecipe()
     }
 
     private fun loadRecipe() {

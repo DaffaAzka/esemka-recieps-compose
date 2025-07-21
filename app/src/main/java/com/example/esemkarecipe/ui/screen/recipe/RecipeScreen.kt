@@ -60,6 +60,7 @@ fun RecipeScreen(
                     state.errorMessage
                 )
                 state.recipe == null -> EmptyView()
+                else -> RecipeView(state.recipe)
             }
         }
 

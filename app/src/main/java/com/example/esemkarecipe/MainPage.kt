@@ -42,7 +42,7 @@ fun MainPage() {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            if (currentPage !is Page.Login && currentPage !is Page.Recipes) {
+            if (currentPage !is Page.Login && currentPage !is Page.Recipes && currentPage !is Page.Recipe) {
                 BottomNavigationBar(currentPage = currentPage, onSelectedPage = setCurrentPage)
             }
         }

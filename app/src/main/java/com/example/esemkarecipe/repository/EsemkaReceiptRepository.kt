@@ -192,7 +192,7 @@ class EsemkaReceiptRepository {
     fun getRecipe(recipeId: Int, callback: (Recipe?, String?) -> Unit) {
         Thread {
             try {
-                val url = URL("$BASE_URL/recipes/$recipeId")  // Fixed URL to use recipeId instead of undefined categoryId
+                val url = URL("$BASE_URL/recipes/detail/$recipeId")
                 val connection = url.openConnection() as HttpURLConnection
                 connection.apply {
                     requestMethod = "GET"
@@ -227,6 +227,8 @@ class EsemkaReceiptRepository {
             }
         }.start()
     }
+
+
     private fun parseCategories(json: String): List<Category> {
         val jsonArray = JSONArray(json)
         return List(jsonArray.length()) { i ->
@@ -273,11 +275,9 @@ class EsemkaReceiptRepository {
             )
         }
     }
-
     private fun parseRecipe(json: String): Recipe {
-        val jsonArray = JSONArray(json)
-
-        val obj = jsonArray.getJSONObject(0)
+        // Parse sebagai JSONObject, bukan JSONArray
+        val obj = JSONObject(json) // Ubah dari JSONArray ke JSONObject
         val categoryObj = obj.getJSONObject("category")
 
         val ingredientsArray = obj.getJSONArray("ingredients")
@@ -309,5 +309,4 @@ class EsemkaReceiptRepository {
 
         return recipe
     }
-
 }
