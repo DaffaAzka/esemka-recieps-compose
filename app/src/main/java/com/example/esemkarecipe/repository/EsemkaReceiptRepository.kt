@@ -152,10 +152,16 @@ class EsemkaReceiptRepository {
         }.start()
     }
 
-    fun getRecipes(categoryId: Int, callback: (List<Recipe>?, String?) -> Unit) {
+    fun getRecipes(categoryId: Int, search: String? = null, callback: (List<Recipe>?, String?) -> Unit) {
         Thread {
             try {
-                val url = URL("$BASE_URL/recipes?categoryId=$categoryId")
+
+                var url = URL("$BASE_URL/recipes?categoryId=$categoryId")
+
+                if (search != null) {
+                    url = URL("$BASE_URL/recipes?categoryId=$categoryId&search=$search")
+                }
+
                 val connection = url.openConnection() as HttpURLConnection
                 connection.apply {
                     requestMethod = "GET"

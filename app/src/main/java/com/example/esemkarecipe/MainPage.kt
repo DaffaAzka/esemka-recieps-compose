@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -45,7 +47,6 @@ fun MainPage() {
     val context = LocalContext.current
 
 
-    // Handle system back button
     BackHandler(enabled = navigationStack.isNotEmpty()) {
         if (navigationStack.isNotEmpty()) {
             currentPage = navigationStack.last()
@@ -131,7 +132,8 @@ fun MainPage() {
                         },
                         onRecipeClick = { recipe ->
                             navigateTo(Page.Recipe(recipe))
-                        }
+                        },
+                        onEvent = recipesViewModel::onEvent
                     )
                 }
             }
@@ -170,7 +172,7 @@ fun BottomNavigationBar(
         NavigationBarItem(
             icon = {
                 Icon(
-                    imageVector = Icons.Default.Home,
+                    imageVector = Icons.Default.Favorite,
                     contentDescription = "Home"
                 )
             },

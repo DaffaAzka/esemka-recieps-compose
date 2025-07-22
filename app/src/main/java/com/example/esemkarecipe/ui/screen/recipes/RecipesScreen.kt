@@ -1,22 +1,23 @@
 package com.example.esemkarecipe.ui.screen.recipes
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -43,7 +45,8 @@ fun RecipesScreen(
     categoryName: String,
     onBackClick: () -> Unit,
     onRecipeClick: (Recipe) -> Unit = {},
-    modifier: Modifier = Modifier
+    onEvent: (RecipesEvent) -> Unit = {},
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -61,16 +64,40 @@ fun RecipesScreen(
             )
         }
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when {
-                state.isLoading -> LoadingView()
-                state.errorMessage != null -> ErrorView(state.errorMessage)
-                state.recipes.isEmpty() -> EmptyView()
-                else -> RecipesGrid(state.recipes, onRecipeClick)
+            OutlinedTextField(
+                value = state.searchQuery,
+                onValueChange = { newValue ->
+                    onEvent(RecipesEvent.SearchChanged(newValue))
+                },
+                label = { Text("Search recipes...") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search"
+                    )
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                enabled = true,
+                readOnly = false
+            )
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    state.isLoading -> LoadingView()
+                    state.errorMessage != null -> ErrorView(state.errorMessage)
+                    state.recipes.isEmpty() && state.searchQuery.length >= 3 -> DataNotFoundView()
+                    state.recipes.isEmpty() && state.searchQuery.isEmpty() -> EmptyView()
+                    else -> RecipesGrid(state.recipes, onRecipeClick)
+                }
             }
         }
     }
@@ -87,7 +114,7 @@ private fun RecipesGrid(recipes: List<Recipe>, onRecipeClick: (Recipe) -> Unit) 
         items(recipes) { recipe ->
             RecipeItem(
                 recipe = recipe,
-                onClick = {onRecipeClick(recipe)}
+                onClick = { onRecipeClick(recipe) }
             )
         }
     }
@@ -101,7 +128,6 @@ private fun RecipeItem(recipe: Recipe, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -157,5 +183,15 @@ private fun EmptyView() {
         contentAlignment = Alignment.Center
     ) {
         Text("No recipes found")
+    }
+}
+
+@Composable
+private fun DataNotFoundView() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Data not found")
     }
 }
